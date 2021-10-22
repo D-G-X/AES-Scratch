@@ -5,6 +5,7 @@ import java.io.ByteArrayOutputStream;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.lang.reflect.Array;
+import java.nio.Buffer;
 import javax.imageio.ImageIO;
 
 public class trail {
@@ -28,7 +29,8 @@ public class trail {
             {0x8c, 0xa1, 0x89, 0x0d, 0xbf, 0xe6, 0x42, 0x68, 0x41, 0x99, 0x2d, 0x0f, 0xb0, 0x54, 0xbb, 0x16}
     };
 
-    public static byte[] substituteState(byte[] state){
+    public static BufferedImage substituteState(byte[] state,BufferedImage outputImage, int width, int height){
+        int currentWidth = 0, currentHeight = 0;
         for(int i=0;i<state.length;i++){
             boolean negative = false;
                 int hex=state[i];
@@ -36,14 +38,18 @@ public class trail {
                     hex *= -1;
                     negative = true;
                 }
-                //hex/16 and hex%16 gives first and second digit of hexadecimal respectively
 //            System.out.println(sbox[hex/16][hex%16]+"\t"+(byte)sbox[hex/16][hex%16]+"\t"+hex);
-                state[i] =(byte)sbox[hex/16][hex%16];
+//                state[i] =(byte)sbox[hex/16][hex%16];
+            if (currentWidth<width & currentHeight<height){
+                byte value = (byte) sbox[hex/16][hex%16];
                 if (negative){
                     state[i] *= -1;
                 }
+                outputImage.setRGB(currentWidth,currentHeight,value);
+                currentHeight++;currentWidth++;}
+
         }
-        return state;
+        return outputImage;
     }
 
     public static void printByteArray(byte[] byteArray, int imageWidth, int imageHeight){
@@ -58,49 +64,35 @@ public class trail {
         }
     }
 
-    public static void printByteArrayWithModification(byte[] byteArray, int imageWidth, int imageHeight){
-        for (int i = 0; i < imageHeight; i++) {
-
-            for (int j=0; j<imageWidth;j++){
-                byte x = Array.getByte(byteArray, i);
-                System.out.print(x + "\t");
-                if(j%50 == 0){
-                    byteArray[j] = 0;
-                }
-            }
-            System.out.println("\n");
-
-        }
-    }
-
     public static void main(String args[]) throws Exception{
         //input image procedure
         BufferedImage inputImage = ImageIO.read(new File("D:/Clear/ImgEncryDecry/src/main/resources/blue.jpg"));
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
         int height = inputImage.getHeight();
         int width = inputImage.getWidth();
+        BufferedImage outputImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
         System.out.println("Height : "+ height);
         System.out.println("Width : "+ width);
 
         ImageIO.write(inputImage, "png", bos );
         byte [] data = bos.toByteArray();
 
-        printByteArrayWithModification(data, width, height);
-
         //sbox procedure
-//        data = substituteState(data);
+        outputImage = substituteState(data, outputImage, width, height);
         System.out.println("After s-box substitution");
         printByteArray(data, width, height);
 
         //output image procedure
-        ByteArrayInputStream bis = new ByteArrayInputStream(data);
-        BufferedImage outputImage = ImageIO.read(bis);
+        BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+
+//        ByteArrayInputStream bis = new ByteArrayInputStream(data);
+//        BufferedImage outputImage = ImageIO.read(bis);
 
         try {
-            ImageIO.write(outputImage, "jpg", new File("output.jpg"));
-            System.out.println("HK");
+            ImageIO.write(outputImage, "png", new File("output.png"));
+            System.out.println("Working");
         }catch (Exception e){
-            System.out.println("NHK");
+            System.out.println("ERROR");
             System.out.println(e);
         }
     }
