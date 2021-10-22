@@ -1,5 +1,6 @@
 package bootstrap;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.awt.image.BufferedImage;
 import java.io.File;
@@ -29,54 +30,78 @@ public class trail {
 
     public static byte[] substituteState(byte[] state){
         for(int i=0;i<state.length;i++){
+            boolean negative = false;
                 int hex=state[i];
                 if (hex < 0 ){
                     hex *= -1;
+                    negative = true;
                 }
                 //hex/16 and hex%16 gives first and second digit of hexadecimal respectively
-            System.out.println(sbox[hex/16][hex%16]+"\t"+(byte)sbox[hex/16][hex%16]+"\t"+hex);
+//            System.out.println(sbox[hex/16][hex%16]+"\t"+(byte)sbox[hex/16][hex%16]+"\t"+hex);
                 state[i] =(byte)sbox[hex/16][hex%16];
+                if (negative){
+                    state[i] *= -1;
+                }
         }
         return state;
     }
 
-    public static void main(String args[]) throws Exception{
-        BufferedImage bImage = ImageIO.read(new File("D:/Clear/ImgEncryDecry/src/main/resources/blue.jpg"));
-        ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        int height = bImage.getHeight();
-        int width = bImage.getWidth();
-        System.out.println("Height : "+ height);
-        System.out.println("Width : "+ width);
+    public static void printByteArray(byte[] byteArray, int imageWidth, int imageHeight){
+        for (int i = 0; i < imageHeight; i++) {
 
-        ImageIO.write(bImage, "jpg", bos );
-        byte [] data = bos.toByteArray();
-        for (int i = 0; i < height; i++) {
-
-            for (int j=0; j<width;j++){
-                byte x = Array.getByte(data, i);
+            for (int j=0; j<imageWidth;j++){
+                byte x = Array.getByte(byteArray, i);
                 System.out.print(x + "\t");
             }
             System.out.println("\n");
 
-            // Array.getByte method
+        }
+    }
+
+    public static void printByteArrayWithModification(byte[] byteArray, int imageWidth, int imageHeight){
+        for (int i = 0; i < imageHeight; i++) {
+
+            for (int j=0; j<imageWidth;j++){
+                byte x = Array.getByte(byteArray, i);
+                System.out.print(x + "\t");
+                if(j%50 == 0){
+                    byteArray[j] = 0;
+                }
+            }
+            System.out.println("\n");
 
         }
-        data = substituteState(data);
-        System.out.println("New Array");
-//        for (int i = 0; i < height; i++) {
-//
-//            for (int j=0; j<width;j++){
-//                byte x = Array.getByte(data, i);
-//                System.out.print(x + "\t");
-//            }
-//            System.out.println("\n");
-//
-//            // Array.getByte method
-//
-//        }
+    }
 
-        //output of a byte array
-        ImageIO.write(bImage, "jpg", new File("output.jpg") );
+    public static void main(String args[]) throws Exception{
+        //input image procedure
+        BufferedImage inputImage = ImageIO.read(new File("D:/Clear/ImgEncryDecry/src/main/resources/blue.jpg"));
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        int height = inputImage.getHeight();
+        int width = inputImage.getWidth();
+        System.out.println("Height : "+ height);
+        System.out.println("Width : "+ width);
 
+        ImageIO.write(inputImage, "png", bos );
+        byte [] data = bos.toByteArray();
+
+        printByteArrayWithModification(data, width, height);
+
+        //sbox procedure
+//        data = substituteState(data);
+        System.out.println("After s-box substitution");
+        printByteArray(data, width, height);
+
+        //output image procedure
+        ByteArrayInputStream bis = new ByteArrayInputStream(data);
+        BufferedImage outputImage = ImageIO.read(bis);
+
+        try {
+            ImageIO.write(outputImage, "jpg", new File("output.jpg"));
+            System.out.println("HK");
+        }catch (Exception e){
+            System.out.println("NHK");
+            System.out.println(e);
+        }
     }
 }
